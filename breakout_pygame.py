@@ -162,9 +162,11 @@ while game_loop:
     # draw brick
     draw_brick(brick_list)
 
+    # ball decrease
     if ball_y < 160:
         weight = 15
 
+    # speed increase
     if 5 == count:
         count = 0
         if ball_dx > 0:
@@ -186,7 +188,8 @@ while game_loop:
             ball_dy += 1
         else:
             ball_dy -= 1
-
+            
+    # end of game
     if LIVE == 4:
         paddle_x = 0
         weight = 600
