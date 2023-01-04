@@ -1,4 +1,6 @@
 import pygame
+from math import cos
+from math import radians
 
 pygame.init()
 pygame.font.init()
@@ -39,14 +41,12 @@ weight = 30
 height = 10
 paddle_x = 275
 paddle_y = 700
-paddle = pygame.draw.rect(screen, COLOR_BLUE, pygame.Rect(paddle_x, paddle_y, weight, height))
 
 # draw ball
 ball_dx = 3
 ball_dy = 3
 ball_x = 279
 ball_y = 467
-ball = pygame.draw.rect(screen, COLOR_BLACK, pygame.Rect(ball_x, ball_y, 11, 4))
 
 
 # collision brick
@@ -94,7 +94,7 @@ def draw_brick(brick_wall):
             paint = COLOR_YELLOW
         pygame.draw.rect(screen, paint, pygame.Rect(cor[0], cor[1], 37, 10))
 
-
+speed = 1
 count = 0
 start = True
 game_clock = pygame.time.Clock()
@@ -107,6 +107,7 @@ while game_loop:
             exit()
 
     keys = pygame.key.get_pressed()
+    esc_bounce = 180 / weight
 
     if keys[pygame.K_LEFT] and paddle_x > 0:
         paddle_x -= 5
@@ -130,14 +131,31 @@ while game_loop:
     if ball_y < 80:
         bounce_sound_effect.play()
         ball_dy *= -1
+    if ball_dx < 0:
+        speed = -1
+    else:
+        speed = 1
 
     # ball collision with  paddle
     if 702 >= ball_y >= 700:
         if paddle_y < ball_y + 4:
-            if paddle_x < ball_x + 11 < paddle_x + weight + 11:
-                bounce_sound_effect.play()
-                ball_dy *= -1
+            if paddle_x < ball_x + 8 < paddle_x + weight + 8:
+                point_bouce = paddle_x + weight - ball_x
+                angle = int(point_bouce * esc_bounce)
+                ball_dy *= -1 
+                #bounce paddle
+                if speed == 1:
+                    if 110 > angle > 70 or angle > 180:
+                        ball_dx = 3           
+                    else:
+                        ball_dx = 3*cos(radians(angle))
+                else:
+                    if 110 > angle > 70 or angle > 180:
+                        ball_dx = -3
+                    else:  
+                        ball_dx = 3*cos(radians(angle))
                 count += 1
+                bounce_sound_effect.play()
 
     # ball collision with lower wall
     if ball_y > 740:
@@ -193,7 +211,7 @@ while game_loop:
     if LIVE == 4:
         paddle_x = 0
         weight = 600
-        if keys[pygame.K_KP_ENTER]:
+        if keys[pygame.K_KP_ENTER] or keys[pygame.K_RETURN]:
             SCORE = 0
             LIVE = 1
             ball_x = 279
@@ -230,7 +248,7 @@ while game_loop:
 
     line_upper = pygame.draw.line(screen, COLOR_WHITE, (0, 60), (585, 60), width=30)
 
-    pygame.draw.rect(screen, COLOR_WHITE, (ball_x, ball_y, 11, 4))
+    pygame.draw.rect(screen, COLOR_WHITE, (ball_x, ball_y, 8, 4))
     pygame.draw.rect(screen, COLOR_BLUE, (paddle_x, paddle_y, weight, height))
     screen.blit(score_point, score_point_rect)
     screen.blit(score_live, score_live_rect)
