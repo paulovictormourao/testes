@@ -1,4 +1,5 @@
 import pygame
+from random import choice
 from math import cos
 from math import radians
 
@@ -16,14 +17,15 @@ COLOR_ORANGE = (255, 165, 0)
 
 SCORE = 0
 LIVE = 1
+LIVE_MAX = 4
 
 size = (587, 800)
 screen = pygame.display.set_mode(size)
 pygame.display.set_caption("Breakout Game")
 
 # Draw Edge
-font = pygame.font.Font('PressStart2P.ttf', 30)
-score_point = font.render('000       000', True, COLOR_WHITE)
+font = pygame.font.Font("PressStart2P.ttf", 30)
+score_point = font.render("000       000", True, COLOR_WHITE)
 score_point_rect = score_point.get_rect()
 score_point_rect.center = (300, 130)
 
@@ -31,8 +33,8 @@ score_live = font.render("1        1", True, COLOR_WHITE)
 score_live_rect = score_live.get_rect()
 score_live_rect.center = (230, 91)
 
-bounce_sound_effect = pygame.mixer.Sound('bounce.wav')
-scoring_sound_effect = pygame.mixer.Sound('258020_stack_arcade-bleep-sound.wav')
+bounce_sound_effect = pygame.mixer.Sound("bounce.wav")
+scoring_sound_effect = pygame.mixer.Sound("258020_stack_arcade-bleep-sound.wav")
 
 brick_list = [(x, y) for y in range(160, 259, 14) for x in range(541, 0, -41)]
 
@@ -43,43 +45,60 @@ paddle_x = 275
 paddle_y = 700
 
 # draw ball
-ball_dx = 3
-ball_dy = 3
+ball_dx = 2
+ball_dy = 2
 ball_x = 279
 ball_y = 467
 
+speed = 1
+count = 0
+start = True
+game_clock = pygame.time.Clock()
+game_loop = True
+screen_brick = 1
 
 # collision brick
-def collision_brick(brick_wall):
+def collision_brick(brick_wall,start):
+    global score_point
+    global SCORE
+    global ball_dy
+
     for brick in brick_wall:
         position_x = brick[0]
         position_y = brick[1]
-
-        global score_point
-        global SCORE
-        global ball_dy
-        global start
-
         if not start:
             return True
 
-        if position_y < ball_y < position_y + 10 and position_x < ball_x + 12 < position_x + 42:
+        if (
+            position_y < ball_y < position_y + 10
+            and position_x < ball_x + 12 < position_x + 42
+        ):
             ball_dy *= -1
-            if position_y == 160 or position_y == 174:
+            if LIVE == LIVE_MAX:
+                return True
+            elif position_y == 160 or position_y == 174:
                 SCORE += 7
-                score_point = font.render("000" + '       ' + str(SCORE), True, COLOR_WHITE, COLOR_BLACK)
+                score_point = font.render(
+                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
+                )
             elif position_y == 188 or position_y == 202:
                 SCORE += 5
-                score_point = font.render("000" + '       ' + str(SCORE), True, COLOR_WHITE, COLOR_BLACK)
+                score_point = font.render(
+                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
+                )
             elif position_y == 216 or position_y == 230:
                 SCORE += 3
-                score_point = font.render("000" + '       ' + str(SCORE), True, COLOR_WHITE, COLOR_BLACK)
+                score_point = font.render(
+                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
+                )
             elif position_y == 244 or position_y == 258:
                 SCORE += 1
-                score_point = font.render("000" + '       ' + str(SCORE), True, COLOR_WHITE, COLOR_BLACK)
-            if LIVE < 4:
-                brick_wall.remove(brick)
-                scoring_sound_effect.play()
+                score_point = font.render(
+                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
+                )
+
+            brick_wall.remove(brick)
+            scoring_sound_effect.play()
             return True
 
 
@@ -94,13 +113,10 @@ def draw_brick(brick_wall):
             paint = COLOR_YELLOW
         pygame.draw.rect(screen, paint, pygame.Rect(cor[0], cor[1], 37, 10))
 
-speed = 1
-count = 0
-start = True
-game_clock = pygame.time.Clock()
-game_loop = True
+
 
 while game_loop:
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -108,6 +124,25 @@ while game_loop:
 
     keys = pygame.key.get_pressed()
     esc_bounce = 180 / weight
+
+    def speed_decrease():
+
+        global count
+        global ball_dy
+
+        count += 1
+        if 4 == count:
+            if ball_dy > 0:
+                ball_dy += 1
+            else:
+                ball_dy -= 1
+
+        if 12 == count:
+            count = 0
+            if ball_dy > 0:
+                ball_dy += 1
+            else:
+                ball_dy -= 1
 
     if keys[pygame.K_LEFT] and paddle_x > 0:
         paddle_x -= 5
@@ -118,6 +153,8 @@ while game_loop:
         paddle_x += 5
     else:
         paddle_x += 0
+
+    
 
     # ball collision with right wall
     if ball_x > 565:
@@ -135,43 +172,41 @@ while game_loop:
         speed = -1
     else:
         speed = 1
+    
+     # ball collision with lower wall
+    if ball_y > 740:
+        ball_x = 279
+        ball_y = 300
+        LIVE += 1
+        score_live = font.render(
+            "1" + "       " + str(LIVE), True, COLOR_WHITE, COLOR_BLACK
+        )
+        count = 0
+        dx = [-3,-2,-1,1,2,3]
+        ball_dx = choice(dx)
+        ball_dy = 2
+        continue
 
     # ball collision with  paddle
     if 702 >= ball_y >= 700:
         if paddle_y < ball_y + 4:
             if paddle_x < ball_x + 8 < paddle_x + weight + 8:
-                point_bouce = paddle_x + weight - ball_x
+                point_bouce = paddle_x + weight - (ball_x + 4)
                 angle = int(point_bouce * esc_bounce)
-                ball_dy *= -1 
-                #bounce paddle
-                if speed == 1:
-                    if 110 > angle > 70 or angle > 180:
-                        ball_dx = 3           
-                    else:
-                        ball_dx = 3*cos(radians(angle))
+                ball_dy *= -1
+                if 120 > angle > 60:
+                    ball_dx = -ball_dy*speed
                 else:
-                    if 110 > angle > 70 or angle > 180:
-                        ball_dx = -3
-                    else:  
-                        ball_dx = 3*cos(radians(angle))
-                count += 1
+                    ball_dx = -ball_dy * cos(radians(angle))
+                print(angle, ball_dy)
+                print(speed, ball_dx)
+                speed_decrease()
                 bounce_sound_effect.play()
-
-    # ball collision with lower wall
-    if ball_y > 740:
-        ball_x = 279
-        ball_y = 467
-        LIVE += 1
-        score_live = font.render(str(LIVE) + '       ' + "1", True, COLOR_WHITE, COLOR_BLACK)
-        count = 0
-        ball_dx = 3
-        ball_dy = 3
-        continue
 
     screen.fill(COLOR_BLACK)
 
     # ball collision with brick
-    if collision_brick(brick_list):
+    if collision_brick(brick_list,start):
         if 268 > ball_y > 160:
             start = False
         else:
@@ -184,31 +219,8 @@ while game_loop:
     if ball_y < 160:
         weight = 15
 
-    # speed increase
-    if 5 == count:
-        count = 0
-        if ball_dx > 0:
-            ball_dx += 1
-        else:
-            ball_dx -= 1
-        if ball_dy > 0:
-            ball_dy += 1
-        else:
-            ball_dy -= 1
-
-    if 13 == count:
-        count = 0
-        if ball_dx > 0:
-            ball_dx += 1
-        else:
-            ball_dx -= 1
-        if ball_dy > 0:
-            ball_dy += 1
-        else:
-            ball_dy -= 1
-            
     # end of game
-    if LIVE == 4:
+    if LIVE >= LIVE_MAX and SCORE < 448:
         paddle_x = 0
         weight = 600
         if keys[pygame.K_KP_ENTER] or keys[pygame.K_RETURN]:
@@ -220,15 +232,36 @@ while game_loop:
             ball_dy = 3
             paddle_x = 275
             weight = 30
-            score_live = font.render(str(LIVE) + '       ' + "1", True, COLOR_WHITE, COLOR_BLACK)
-            brick_list = [(x, y) for y in range(160, 259, 14) for x in range(541, 0, -41)]
+            score_point = font.render("000       000", True, COLOR_WHITE)
+            score_live = font.render(
+                str(LIVE) + "       " + "1", True, COLOR_WHITE, COLOR_BLACK
+            )
+            brick_list = [
+                (x, y) for y in range(160, 259, 14) for x in range(541, 0, -41)
+            ]
             continue
+    elif LIVE < LIVE_MAX and SCORE >= 448 and screen_brick == 1:
+        brick_list = [
+                (x, y) for y in range(160, 259, 14) for x in range(541, 0, -41)
+            ]
+        screen_brick += 1
+        
+    if keys[pygame.K_UP]:
+        SCORE = 448
+        score_point = font.render(
+                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
+                )
+        continue
 
     ball_x = ball_x + ball_dx
     ball_y = ball_y + ball_dy
 
-    line_ball_left = pygame.draw.line(screen, (0, 150, 200), (4, 690), (4, 720), width=10)
-    line_ball_right = pygame.draw.line(screen, (0, 150, 200), (582, 690), (582, 720), width=10)
+    line_ball_left = pygame.draw.line(
+        screen, (0, 150, 200), (4, 690), (4, 720), width=10
+    )
+    line_ball_right = pygame.draw.line(
+        screen, (0, 150, 200), (582, 690), (582, 720), width=10
+    )
 
     line_left1 = pygame.draw.line(screen, COLOR_WHITE, (4, 0), (4, 159), width=10)
     line_left2 = pygame.draw.line(screen, COLOR_WHITE, (4, 267), (4, 690), width=10)
@@ -239,12 +272,22 @@ while game_loop:
     yellow_left = pygame.draw.line(screen, COLOR_YELLOW, (4, 244), (4, 267), width=10)
 
     line_right1 = pygame.draw.line(screen, COLOR_WHITE, (582, 0), (582, 159), width=10)
-    line_right2 = pygame.draw.line(screen, COLOR_WHITE, (582, 267), (582, 690), width=10)
-    line_right3 = pygame.draw.line(screen, COLOR_WHITE, (582, 720), (582, 800), width=10)
+    line_right2 = pygame.draw.line(
+        screen, COLOR_WHITE, (582, 267), (582, 690), width=10
+    )
+    line_right3 = pygame.draw.line(
+        screen, COLOR_WHITE, (582, 720), (582, 800), width=10
+    )
     red_right = pygame.draw.line(screen, COLOR_RED, (582, 160), (582, 188), width=10)
-    orange_right = pygame.draw.line(screen, COLOR_ORANGE, (582, 188), (582, 216), width=10)
-    green_right = pygame.draw.line(screen, COLOR_GREEN, (582, 216), (582, 244), width=10)
-    yellow_right = pygame.draw.line(screen, COLOR_YELLOW, (582, 244), (582, 267), width=10)
+    orange_right = pygame.draw.line(
+        screen, COLOR_ORANGE, (582, 188), (582, 216), width=10
+    )
+    green_right = pygame.draw.line(
+        screen, COLOR_GREEN, (582, 216), (582, 244), width=10
+    )
+    yellow_right = pygame.draw.line(
+        screen, COLOR_YELLOW, (582, 244), (582, 267), width=10
+    )
 
     line_upper = pygame.draw.line(screen, COLOR_WHITE, (0, 60), (585, 60), width=30)
 
@@ -252,6 +295,6 @@ while game_loop:
     pygame.draw.rect(screen, COLOR_BLUE, (paddle_x, paddle_y, weight, height))
     screen.blit(score_point, score_point_rect)
     screen.blit(score_live, score_live_rect)
-
+    
     pygame.display.flip()
     game_clock.tick(70)
