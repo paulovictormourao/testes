@@ -50,15 +50,31 @@ ball_dy = 2
 ball_x = 279
 ball_y = 467
 
+#auxiliary variables
 speed = 1
 count = 0
-start = True
-game_clock = pygame.time.Clock()
-game_loop = True
+smash = True
 screen_brick = 1
 
+#update score
+def score(score):
+        global score_point
+        if score < 10:
+            score_point = font.render(
+                    f"00{str(score)}" + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
+                )
+        elif 100 > score >= 10:
+            score_point = font.render(
+                    f"0{str(score)}" + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
+                )
+        else:
+            score_point = font.render(
+                    f"{str(score)}" + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
+                )
+
+
 # collision brick
-def collision_brick(brick_wall,start):
+def collision_brick(brick_wall,smash):
     global score_point
     global SCORE
     global ball_dy
@@ -66,7 +82,7 @@ def collision_brick(brick_wall,start):
     for brick in brick_wall:
         position_x = brick[0]
         position_y = brick[1]
-        if not start:
+        if not smash:
             return True
 
         if (
@@ -78,30 +94,21 @@ def collision_brick(brick_wall,start):
                 return True
             elif position_y == 160 or position_y == 174:
                 SCORE += 7
-                score_point = font.render(
-                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
-                )
+                score(SCORE)
             elif position_y == 188 or position_y == 202:
                 SCORE += 5
-                score_point = font.render(
-                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
-                )
+                score(SCORE)
             elif position_y == 216 or position_y == 230:
                 SCORE += 3
-                score_point = font.render(
-                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
-                )
+                score(SCORE)
             elif position_y == 244 or position_y == 258:
                 SCORE += 1
-                score_point = font.render(
-                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
-                )
-
+                score(SCORE)
             brick_wall.remove(brick)
             scoring_sound_effect.play()
             return True
 
-
+# brick wall construction
 def draw_brick(brick_wall):
     paint = COLOR_RED
     for cor in brick_wall:
@@ -113,7 +120,27 @@ def draw_brick(brick_wall):
             paint = COLOR_YELLOW
         pygame.draw.rect(screen, paint, pygame.Rect(cor[0], cor[1], 37, 10))
 
+# ball speed
+def speed_decrease():
+        global count
+        global ball_dy
 
+        count += 1
+        if 4 == count and ball_dy <= 8:
+            if ball_dy > 0:
+                ball_dy += 1
+            else:
+                ball_dy -= 1
+
+        if 12 == count and ball_dy <= 8:
+            count = 0
+            if ball_dy > 0:
+                ball_dy += 1
+            else:
+                ball_dy -= 1
+
+game_clock = pygame.time.Clock()
+game_loop = True
 
 while game_loop:
 
@@ -124,25 +151,6 @@ while game_loop:
 
     keys = pygame.key.get_pressed()
     esc_bounce = 180 / weight
-
-    def speed_decrease():
-
-        global count
-        global ball_dy
-
-        count += 1
-        if 4 == count:
-            if ball_dy > 0:
-                ball_dy += 1
-            else:
-                ball_dy -= 1
-
-        if 12 == count:
-            count = 0
-            if ball_dy > 0:
-                ball_dy += 1
-            else:
-                ball_dy -= 1
 
     if keys[pygame.K_LEFT] and paddle_x > 0:
         paddle_x -= 5
@@ -160,20 +168,24 @@ while game_loop:
     if ball_x > 565:
         bounce_sound_effect.play()
         ball_dx *= -1
+
     # ball collision with left wall
     elif ball_x < 20:
         bounce_sound_effect.play()
         ball_dx *= -1
+
     # ball collision with upper wall
     if ball_y < 80:
         bounce_sound_effect.play()
         ball_dy *= -1
+
+    #find the direction of the ball( left or right)
     if ball_dx < 0:
         speed = -1
     else:
         speed = 1
     
-     # ball collision with lower wall
+    # ball collision with lower wall(lose turn)
     if ball_y > 740:
         ball_x = 279
         ball_y = 300
@@ -198,24 +210,22 @@ while game_loop:
                     ball_dx = -ball_dy*speed
                 else:
                     ball_dx = -ball_dy * cos(radians(angle))
-                print(angle, ball_dy)
-                print(speed, ball_dx)
                 speed_decrease()
                 bounce_sound_effect.play()
 
     screen.fill(COLOR_BLACK)
 
     # ball collision with brick
-    if collision_brick(brick_list,start):
+    if collision_brick(brick_list,smash):
         if 268 > ball_y > 160:
-            start = False
+            smash = False
         else:
-            start = True
+            smash = True
 
     # draw brick
     draw_brick(brick_list)
 
-    # ball decrease
+    # ball decrease(get past the brick wall)
     if ball_y < 160:
         weight = 15
 
@@ -240,17 +250,18 @@ while game_loop:
                 (x, y) for y in range(160, 259, 14) for x in range(541, 0, -41)
             ]
             continue
+    #next round
     elif LIVE < LIVE_MAX and SCORE >= 448 and screen_brick == 1:
         brick_list = [
                 (x, y) for y in range(160, 259, 14) for x in range(541, 0, -41)
             ]
+        paddle_x = 275
+        weight = 30
         screen_brick += 1
         
     if keys[pygame.K_UP]:
         SCORE = 448
-        score_point = font.render(
-                    str(SCORE) + "       " + "000", True, COLOR_WHITE, COLOR_BLACK
-                )
+        score(SCORE)
         continue
 
     ball_x = ball_x + ball_dx
@@ -293,8 +304,8 @@ while game_loop:
 
     pygame.draw.rect(screen, COLOR_WHITE, (ball_x, ball_y, 8, 4))
     pygame.draw.rect(screen, COLOR_BLUE, (paddle_x, paddle_y, weight, height))
-    screen.blit(score_point, score_point_rect)
     screen.blit(score_live, score_live_rect)
-    
+    screen.blit(score_point, score_point_rect)
     pygame.display.flip()
     game_clock.tick(70)
+   
