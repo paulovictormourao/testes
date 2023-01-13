@@ -37,9 +37,9 @@ while True:
                          (890, 320)])
 
     pygame.draw.rect(screen, "#c29f2e", (480, 155, 40, 100))
-    pygame.draw.rect(screen, "#c29f2e", (480, 550, 40, 100))
+    pygame.draw.rect(screen, "#c29f2e", (480, 545, 40, 100))
     pygame.draw.rect(screen, "#c29f2e", (255, 380, 100, 40))
-    pygame.draw.rect(screen, "#c29f2e", (625, 380, 100, 40))
+    pygame.draw.rect(screen, "#c29f2e", (645, 380, 100, 40))
 
     pygame.draw.rect(screen, "#c29f2e", (0, 50, 1000, 700), 25)
     screen.blit(player1, (50, 380))
