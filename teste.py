@@ -76,7 +76,7 @@ yp1 = field_middle_x - 25
 xp2 = sc_width - 100
 yp2 = field_middle_x - 25
 radius = 25*(2**0.5)
-ang = 135
+ang = 0
 
 while True:
     for event in pygame.event.get():
@@ -84,7 +84,22 @@ while True:
             pygame.quit()
             exit()
 
-    # controls
+    if pygame.key.get_pressed()[K_UP]:
+        xp1 += math.sin(math.radians(ang+90))
+        yp1 += math.cos(math.radians(ang+90))
+
+    elif pygame.key.get_pressed()[K_LEFT]:
+        ang += 1
+
+    elif pygame.key.get_pressed()[K_RIGHT]:
+        ang += -1
+    pygame.key.get_pressed()[K_LEFT]
+
+    player1 = pygame.image.load("player1.png")
+    player1 = pygame.transform.scale(player1, (50, 50))
+    player1 = pygame.transform.rotate(player1, ang)
+    player2 = pygame.image.load("player2.png")
+    player2 = pygame.transform.scale(player2, (50, 50))
     screen.blit(player1, (xp1, yp1))
     screen.blit(player2, (xp2, yp2))
     screen.blit(score_point_player1, score_point_player1_rect)
